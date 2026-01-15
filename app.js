@@ -8,13 +8,23 @@ const cookieParser = require('cookie-parser');
 
 const app = express();
 
-// allow Vite dev server origin and credentials
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:5173';
+// Allow multiple origins (prod + local) and handle preflight
+const DEFAULT_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const envOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(s => s.trim()) : [];
+const allowedOrigins = Array.from(new Set([...envOrigins, ...DEFAULT_ORIGINS]));
 
-app.use(cors({
-  origin: FRONTEND_URL,
-  credentials: true
-}));
+const corsOptions = {
+  origin: function (origin, callback) {
+    if (!origin) return callback(null, true);
+    const ok = allowedOrigins.includes(origin) || /https?:\/\/.*\.vercel\.app$/.test(origin);
+    return ok ? callback(null, true) : callback(new Error('Not allowed by CORS'));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(cookieParser());
 

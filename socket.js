@@ -4,10 +4,14 @@ const captainModel = require('./models/captain.model');
 
 let io;
 
+const DEFAULT_ORIGINS = ['http://localhost:5173', 'http://127.0.0.1:5173'];
+const envOrigins = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.split(',').map(s => s.trim()) : [];
+const allowedOrigins = Array.from(new Set([...envOrigins, ...DEFAULT_ORIGINS]));
+
 function initializeSocket(server) {
   io = socketIo(server, {
     cors: {
-      origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+      origin: [...allowedOrigins, /https?:\/\/.*\.vercel\.app$/],
       methods: ['GET', 'POST'],
       credentials: true
     }
